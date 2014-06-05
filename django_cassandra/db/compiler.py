@@ -41,8 +41,8 @@ def safe_call(func):
     def _func(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception, e:
-            raise DatabaseError, DatabaseError(*tuple(e)), sys.exc_info()[2]
+        except Exception as e:
+            raise DatabaseError(DatabaseError(*tuple(e))).with_traceback(sys.exc_info()[2])
     return _func
 
 class CassandraQuery(NonrelQuery):
@@ -139,7 +139,7 @@ class CassandraQuery(NonrelQuery):
             (range_predicate.end == range_predicate.start) and
             range_predicate.start_inclusive and
             range_predicate.end_inclusive):
-            index_expression = IndexExpression(range_predicate.column, IndexOperator.EQ, unicode(range_predicate.start))
+            index_expression = IndexExpression(range_predicate.column, IndexOperator.EQ, str(range_predicate.start))
             index_expressions.append(index_expression)
         else:
             # NOTE: These range queries don't work with the current version of cassandra
@@ -150,11 +150,11 @@ class CassandraQuery(NonrelQuery):
             # on indexed columns (they still can be performed, just inefficiently).
             if range_predicate.start:
                 index_op = IndexOperator.GTE if range_predicate.start_inclusive else IndexOperator.GT
-                index_expression = IndexExpression(unicode(range_predicate.column), index_op, unicode(range_predicate.start))
+                index_expression = IndexExpression(str(range_predicate.column), index_op, str(range_predicate.start))
                 index_expressions.append(index_expression)
             if range_predicate.end:
                 index_op = IndexOperator.LTE if range_predicate.end_inclusive else IndexOperator.LT
-                index_expression = IndexExpression(unicode(range_predicate.column), index_op, unicode(range_predicate.end))
+                index_expression = IndexExpression(str(range_predicate.column), index_op, str(range_predicate.end))
                 index_expressions.append(index_expression)
                 
         assert(len(index_expressions) > 0)
@@ -219,7 +219,7 @@ class CassandraQuery(NonrelQuery):
             results = self._get_query_results()
             if low_mark is not None or high_mark is not None:
                 results = results[low_mark:high_mark]
-        except Exception, e:
+        except Exception as e:
             # FIXME: Can get rid of this exception handling code eventually,
             # but it's useful for debugging for now.
             #traceback.print_exc()
@@ -361,7 +361,7 @@ class SQLCompiler(NonrelCompiler):
         elif db_type == 'int':
             value = int(value)
         elif db_type == 'long':
-            value = long(value)
+            value = int(value)
         elif db_type == 'float':
             value = float(value)
         #elif db_type == 'id':
@@ -397,12 +397,12 @@ class SQLCompiler(NonrelCompiler):
         elif (db_type == 'int') or (db_type == 'long') or (db_type == 'float'):
             value = str(value)
         elif db_type == 'id':
-            value = unicode(value)
-        elif (type(value) is not unicode) and (type(value) is not str):
-            value = unicode(value)
+            value = str(value)
+        elif (type(value) is not str) and (type(value) is not str):
+            value = str(value)
         
         # always store strings as utf-8
-        if type(value) is unicode:
+        if type(value) is str:
             value = value.encode('utf-8')
             
         return value
@@ -460,7 +460,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
                 try:
                     compound_key_values = [data.get(field_name) for field_name in compound_key_fields]
                     key = separator.join(compound_key_values)
-                except Exception, e:
+                except Exception as e:
                     raise DatabaseError('The values of the fields used to form a compound key must be specified and cannot be null')
             else:
                 key = str(uuid4())
@@ -472,9 +472,9 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
         timestamp = get_next_timestamp()
         
         mutation_list = []
-        for name, value in data.items():
+        for name, value in list(data.items()):
             # FIXME: Do we need this check here? Or is the name always already a str instead of unicode.
-            if type(name) is unicode:
+            if type(name) is str:
                 name = name.decode('utf-8')
             mutation = Mutation(column_or_supercolumn=ColumnOrSuperColumn(column=Column(name=name, value=value, timestamp=timestamp)))
             mutation_list.append(mutation)
@@ -531,9 +531,9 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             row_count += 1
             mutation_list = []
             key = result[pk_index]
-            for name, value in data.items():
+            for name, value in list(data.items()):
                 # FIXME: Do we need this check here? Or is the name always already a str instead of unicode.
-                if type(name) is unicode:
+                if type(name) is str:
                     name = name.decode('utf-8')
                 mutation = Mutation(column_or_supercolumn=ColumnOrSuperColumn(column=Column(name=name, value=value, timestamp=timestamp)))
                 mutation_list.append(mutation)

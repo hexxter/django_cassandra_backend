@@ -106,13 +106,13 @@ def combine_rows(rows1, rows2, op, primary_key_column):
         # Get the next element from one or both of the lists
         if update1:
             try:
-                row1 = iter1.next()
+                row1 = next(iter1)
             except:
                 row1 = None
             value1 = row1.get(primary_key_column, None) if row1 != None else None
         if update2:
             try:
-                row2 = iter2.next()
+                row2 = next(iter2)
             except:
                 row2 = None
             value2 = row2.get(primary_key_column, None) if row2 != None else None
@@ -180,7 +180,7 @@ def convert_string_to_list(s):
     return eval(s)
 
 def convert_list_to_string(l):
-    return unicode(l)
+    return str(l)
 
 
 class CassandraConnection(object):
@@ -204,7 +204,7 @@ class CassandraConnection(object):
                 if self.client:
                     self.client.set_keyspace(self.keyspace)
                     self.keyspace_set = True
-            except Exception, e:
+            except Exception as e:
                 # In this case we won't have set keyspace_set to true, so we'll throw the
                 # exception below where it also handles the case that self.client
                 # is not valid yet.
@@ -221,7 +221,7 @@ class CassandraConnection(object):
                         credentials = {'username': self.user, 'password': self.password}
                         self.client.login(AuthenticationRequest(credentials))
                         self.logged_in = True
-                except Exception, e:
+                except Exception as e:
                     # In this case we won't have set logged_in to true, so we'll throw the
                     # exception below where it also handles the case that self.client
                     # is not valid yet.
@@ -251,7 +251,7 @@ class CassandraConnection(object):
         if self.transport != None:
             try:
                 self.transport.close()
-            except Exception, e:
+            except Exception as e:
                 pass
             self.transport = None
             self.client = None
@@ -294,9 +294,9 @@ def call_cassandra_with_reconnect(connection, fn, *args, **kwargs):
         except TTransport.TTransportException:
             connection.reopen()
             results = fn(connection.get_client(), *args, **kwargs)
-    except TTransport.TTransportException, e:
+    except TTransport.TTransportException as e:
         raise CassandraConnectionError(e)
-    except Exception, e:
+    except Exception as e:
         raise CassandraAccessError(e)
 
     return results

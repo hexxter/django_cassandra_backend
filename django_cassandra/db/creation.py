@@ -103,7 +103,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         
         try:
             db_connection.get_client().system_drop_keyspace(keyspace_name)
-        except Exception, e:
+        except Exception as e:
             # We want to succeed without complaining if the test db doesn't
             # exist yet, so we just assume that any exception that's raised
             # was for that reason and ignore it, except for printing a
@@ -120,7 +120,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         """
         
         if verbosity >= 1:
-            print "Creating test database '%s'..." % self.connection.alias
+            print("Creating test database '%s'..." % self.connection.alias)
 
         # Replace the NAME field in the database settings with the test keyspace name
         settings_dict = self.connection.settings_dict
@@ -147,7 +147,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         """
 
         if verbosity >= 1:
-            print "Destroying test database '%s'..." % self.connection.alias
+            print("Destroying test database '%s'..." % self.connection.alias)
             
         settings_dict = self.connection.settings_dict
         test_keyspace_name = settings_dict.get('NAME')

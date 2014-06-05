@@ -100,7 +100,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 minor_version = int(m.group(2))
                 patch_version = int(m.group(3))
                 self.determined_version = True
-            except Exception, e:
+            except Exception as e:
                 raise DatabaseError('Invalid Thrift version string', e)
             
             # Determine supported features based on the API version
@@ -112,7 +112,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         if set_keyspace:
             try:
                 self._db_connection.set_keyspace()
-            except Exception, e:
+            except Exception as e:
                 # Set up the default settings for the keyspace
                 keyspace_def_settings = {
                     'name': self._db_connection.keyspace,
@@ -180,9 +180,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             
         try:
             self.configure_connection(set_keyspace, login)
-        except TTransport.TTransportException, e:
+        except TTransport.TTransportException as e:
             raise CassandraConnectionError(e)
-        except Exception, e:
+        except Exception as e:
             raise CassandraAccessError(e)
         
         return self._db_connection
